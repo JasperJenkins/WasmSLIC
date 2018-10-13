@@ -1,0 +1,24 @@
+{
+  "author": "Jasper Jenkins N<jasper.vs.jenkins@gmail.com>",
+  "name": "web-slic",
+  "version": "0.0.1",
+  "license": "Apache-2.0/MIT",
+  "scripts": {
+    "start": "parcel web/index.html",
+    "build": "parcel build web/index.html"
+  },
+  "bin": {
+    "create-rust-parcel": ".bin/create-rust-parcel.js"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
+    "json5": "^2.1.0",
+    "parcel-bundler": "^1.10.2",
+    "parcel-plugin-wasm.rs": "^1.2.5"
+  },
+  "dependencies": {
+    "http-server": "^0.11.1"
+  }
+}
