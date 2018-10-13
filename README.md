@@ -1,7 +1,7 @@
 # SLIC Superpixels
 
 Simple Linear Iterative Clustering algorithm made with Rust compiled to WASM.
-Bundled [wasm-pack](https://github.com/rustwasm/wasm-pack) with [parcel](https://parceljs.org/)
+Bundled using [wasm-pack](https://github.com/rustwasm/wasm-pack) and [parcel](https://parceljs.org/)
 
 TL;DR: k-means over a 5-dimensional space, two xy image coordinates and three cielab color coordinates. 
 The k-means only has to consider n near pixels for each centroid because far centroids could not be closer no matter the color similarity.
