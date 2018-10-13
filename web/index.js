@@ -28,4 +28,8 @@ function upadate_the_thing() {
     context.putImageData(image_data, 0, 0);
 }
 
-upadate_the_thing();
+if (image.complete) {
+    upadate_the_thing();
+} else {
+    image.onload = upadate_the_thing;
+}
