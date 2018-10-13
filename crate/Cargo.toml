@@ -28,3 +28,13 @@ default-features = ["console_error_panic_hook", "wee_alloc"]
 [dependencies.web-sys]
 version = "*"
 features = ["ImageData", "console"]
+
+[profile.dev]
+opt-level = 3
+debug = true
+[profile.release]
+opt-level = 3
+[profile.test]
+opt-level = 3
+[profile.bench]
+opt-level = 3
