@@ -237,19 +237,17 @@ fn create_segments(
             for x_i in x_min..x_max {
                 for y_i in y_min..y_max {
                     if *segments.i(x_i, y_i) != -1 {
-                        let distance_k = Point::distance(
+                        if Point::distance(
                             pixels_slic.i(x_i, y_i),
                             centroid,
                             spacing,
                             m_num
-                        );
-                        let distance_now = Point::distance(
+                        ) < Point::distance(
                             pixels_slic.i(x_i, y_i),
                             &centroids[*segments.i(x_i, y_i) as usize],
                             spacing,
                             m_num
-                        );
-                        if distance_k < distance_now {
+                        ) {
                             segments.i_assign(x_i, y_i, k as i16);
                         }
                     } else {
