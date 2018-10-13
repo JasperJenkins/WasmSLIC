@@ -93,12 +93,12 @@ impl Point {
     #[inline(always)]
     pub fn distance(a: &Self, b: &Self, s: f32, m: f32) -> f32 {
         (
-              (a.l - b.l).powi(2)
-            + (a.a - b.a).powi(2)
-            + (a.b - b.b).powi(2)
+              (a.l - b.l).abs()//.powi(2)
+            + (a.a - b.a).abs()//.powi(2)
+            + (a.b - b.b).abs()//.powi(2)
         )/*.sqrt()*/ + (m / s) * (
-              (a.x - b.x).powi(2)
-            + (a.y - b.y).powi(2)
+              (a.x - b.x).abs()//.powi(2)
+            + (a.y - b.y).abs()//.powi(2)
         )//.sqrt()
     }
 
