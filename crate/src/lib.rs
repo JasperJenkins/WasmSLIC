@@ -5,7 +5,6 @@ extern crate wasm_bindgen;
 extern crate web_sys;
 use wasm_bindgen::prelude::{*};
 use web_sys::{ImageData};
-use web_sys::console::{log_1, log_2, log_3};
 use std::ops::{AddAssign};
 use std::{f32, i16};
 mod color;
@@ -27,18 +26,6 @@ cfg_if! {
         #[global_allocator]
         static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
     }
-}
-
-fn log_num(num: i32) {
-    log_1(&num.into());
-}
-
-fn log_nums(num_a: i32, num_b: i32) {
-    log_2(&num_a.into(), &num_b.into());
-}
-
-fn log_nums_3(num_a: f64, num_b: f64, num_c: f64) {
-    log_3(&num_a.into(), &num_b.into(), &num_c.into());
 }
 
 #[wasm_bindgen]
