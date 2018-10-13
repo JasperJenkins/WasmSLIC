@@ -1,5 +1,5 @@
 // https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/bsds/code/Util/RGB2Lab.m
-#[inline]
+#[inline(always)]
 pub fn rgb2lab(r: u8, g: u8, b: u8, rgb2xyz_table: &[f32]) -> (f32, f32, f32) {
     let (r, g, b) = (
         rgb2xyz_table[r as usize],
@@ -31,6 +31,7 @@ pub fn rgb2lab(r: u8, g: u8, b: u8, rgb2xyz_table: &[f32]) -> (f32, f32, f32) {
     (l, 500.0 * (f_x - f_y), 200.0 * (f_y - f_z))
 }
 
+#[inline(always)]
 pub fn rgb2xyz_coord(c: u8) -> f32 {
     let c = c as f32 / 255.0;
     if c > 0.04045 {

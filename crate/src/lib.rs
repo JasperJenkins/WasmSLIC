@@ -82,6 +82,7 @@ struct Point {
 }
 
 impl Point {
+    #[inline(always)]
     pub fn from_rgb(
         r: u8, g: u8, b: u8, x: usize, y: usize, rgb2xyz_table: &[f32]
     ) -> Self {
@@ -89,6 +90,7 @@ impl Point {
         Point { l, a, b, x: x as f32, y: y as f32 }
     }
 
+    #[inline(always)]
     pub fn distance(a: &Self, b: &Self, s: f32, m: f32) -> f32 {
         let d_lab = (
               (a.l - b.l).powi(2)
@@ -102,6 +104,7 @@ impl Point {
         d_lab + (m / s) * d_xy
     }
 
+    #[inline(always)]
     pub fn zero(&mut self) {
         self.l = 0.0;
         self.a = 0.0;
@@ -110,6 +113,7 @@ impl Point {
         self.y = 0.0;
     }
 
+    #[inline(always)]
     fn add(&mut self, other: &Point) {
         self.l += other.l;
         self.a += other.a;
@@ -118,6 +122,7 @@ impl Point {
         self.y += other.y;
     }
 
+    #[inline(always)]
     fn div(&mut self, other: f32) {
         self.l /= other;
         self.a /= other;
@@ -138,14 +143,17 @@ impl<T> Vec2d<T> {
         Vec2d { vec, width, height }
     }
 
+    #[inline(always)]
     pub fn i(&self, x: usize, y: usize) -> &T {
         &self.vec[self.width * y + x]
     }
 
+    #[inline(always)]
     pub fn i_mut(&mut self, x: usize, y: usize) -> &mut T {
         &mut self.vec[self.width * y + x]
     }
 
+    #[inline(always)]
     pub fn i_assign(&mut self, x: usize, y: usize, item: T) {
         self.vec[self.width * y + x] = item;
     }
