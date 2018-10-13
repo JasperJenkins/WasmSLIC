@@ -92,16 +92,14 @@ impl Point {
 
     #[inline(always)]
     pub fn distance(a: &Self, b: &Self, s: f32, m: f32) -> f32 {
-        let d_lab = (
+        (
               (a.l - b.l).powi(2)
             + (a.a - b.a).powi(2)
             + (a.b - b.b).powi(2)
-        ).sqrt();
-        let d_xy = (
+        )/*.sqrt()*/ + (m / s) * (
               (a.x - b.x).powi(2)
             + (a.y - b.y).powi(2)
-        ).sqrt();
-        d_lab + (m / s) * d_xy
+        )//.sqrt()
     }
 
     #[inline(always)]
@@ -226,7 +224,7 @@ fn create_segments(
     );
     let search_space = spacing * 2.0;
     let mut cluster_counts: Vec<u32> = vec![0; centroids.len()];
-    for _ in 0..10 {
+    for _ in 0..5 {
         for (k, centroid) in centroids.iter().enumerate() {
             let (x_min, x_max) = (
                 usize::max((centroid.x - search_space) as usize, 0),
