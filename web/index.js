@@ -8,13 +8,9 @@ const compactness_input = document.querySelector("#compactness-input");
 const segments_label = document.querySelector("#segments-label");
 const compactness_label = document.querySelector("#compactness-label");
 
-segments_input.onchange = () => {
-    upadate_the_thing();
-}
+segments_input.onchange = upadate_the_thing;
 
-compactness_input.onchange = () => {
-    upadate_the_thing();
-}
+compactness_input.onchange = upadate_the_thing;
 
 function upadate_the_thing() {
     context.canvas.width = image.width;
@@ -22,7 +18,7 @@ function upadate_the_thing() {
     context.drawImage(image, 0, 0, image.width, image.height);
     let image_data = context.getImageData(0, 0, image.width, image.height);
     context.putImageData(image_data, 0, 0);
-    segments_label.innerText = "Segments (16-512): " + segments_input.value;
+    segments_label.innerText = "Segments (8-512): " + segments_input.value;
     compactness_label.innerText = "Compactness (1-50): " + compactness_input.value;
     image_data = slic.segment_image(
         +segments_input.value,
