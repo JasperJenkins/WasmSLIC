@@ -216,7 +216,7 @@ fn create_segments(
     let mut segments: Vec2d<i16> = Vec2d::from_vec(
         vec![-1; width * height], width, height
     );
-    let search_space = spacing * 1.75;
+    let search_space = spacing * 2.0;
     let mut cluster_counts: Vec<u32> = vec![0; centroids.len()];
     for _ in 0..10 {
         for (k, centroid) in centroids.iter().enumerate() {
