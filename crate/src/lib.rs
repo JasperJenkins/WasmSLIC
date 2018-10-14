@@ -91,12 +91,12 @@ impl Point {
     }
 
     #[inline(always)]
-    pub fn distance(a: &Self, b: &Self, s: f32, m: f32) -> f32 {
+    pub fn distance(a: &Self, b: &Self, xy_coeff: f32) -> f32 {
         (
               (a.l - b.l).abs()//.powi(2)
             + (a.a - b.a).abs()//.powi(2)
             + (a.b - b.b).abs()//.powi(2)
-        )/*.sqrt()*/ + (m / s) * (
+        )/*.sqrt()*/ + xy_coeff * (
               (a.x - b.x).abs()//.powi(2)
             + (a.y - b.y).abs()//.powi(2)
         )//.sqrt()
@@ -222,9 +222,10 @@ fn create_segments(
     let mut segments: Vec2d<i16> = Vec2d::from_vec(
         vec![-1; width * height], width, height
     );
+    let xy_coeff = m_num / spacing;
     let search_space = spacing * 2.0;
     let mut cluster_counts: Vec<u32> = vec![0; centroids.len()];
-    for _ in 0..5 {
+    for _ in 0..6 {
         for (k, centroid) in centroids.iter().enumerate() {
             let (x_min, x_max) = (
                 usize::max((centroid.x - search_space) as usize, 0),
@@ -240,13 +241,11 @@ fn create_segments(
                         if Point::distance(
                             pixels_slic.i(x_i, y_i),
                             centroid,
-                            spacing,
-                            m_num
+                            xy_coeff,
                         ) < Point::distance(
                             pixels_slic.i(x_i, y_i),
                             &centroids[*segments.i(x_i, y_i) as usize],
-                            spacing,
-                            m_num
+                            xy_coeff,
                         ) {
                             segments.i_assign(x_i, y_i, k as i16);
                         }
