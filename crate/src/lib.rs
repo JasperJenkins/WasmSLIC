@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate cfg_if;
-
 extern crate wasm_bindgen;
 extern crate web_sys;
 use wasm_bindgen::prelude::{*};
@@ -41,23 +40,11 @@ pub fn segment_image(
     let (mut centroids, spacing) = init_centroids_and_get_spacing(
         segment_num, &pixels_slic,
     );
-    let segments = create_segments(
+    let mut segments = create_segments(
         spacing, m_num, &mut pixels_slic, &mut centroids,
     );
-    for i in (0..pixels_rgb.len()).step_by(4) {
-        let segment = segments.vec[i / 4];
-        if segment == -1 {
-            pixels_rgb[i] = 255;
-            pixels_rgb[i + 1] = 255;
-            pixels_rgb[i + 2] = 255;
-            pixels_rgb[i + 3] = 255;
-        } else {
-            pixels_rgb[i] = (segment * 90 % 255) as u8;
-            pixels_rgb[i + 1] = (segment * 47 % 255) as u8;
-            pixels_rgb[i + 2] = (segment * 173 % 255) as u8;
-            pixels_rgb[i + 3] = 90;
-        }
-    }
+    segments = enforce_connectivity(segments, &centroids);
+    mark_boundaries(&mut pixels_rgb, &segments);
     ImageData::new_with_u8_clamped_array_and_sh(
         wasm_bindgen::Clamped(&mut pixels_rgb), width, height
     ).unwrap()
@@ -83,6 +70,7 @@ impl Point {
 
     #[inline(always)]
     pub fn distance(a: &Self, b: &Self, xy_coeff: f32) -> f32 {
+        /*
         (
               (a.l - b.l).powi(2)
             + (a.a - b.a).powi(2)
@@ -91,7 +79,7 @@ impl Point {
               (a.x - b.x).powi(2)
             + (a.y - b.y).powi(2)
         ).sqrt()
-        /*
+        */
         (
               (a.l - b.l).abs()
             + (a.a - b.a).abs()
@@ -100,7 +88,6 @@ impl Point {
               (a.x - b.x).abs()
             + (a.y - b.y).abs()
         )
-        */
     }
 
     #[inline(always)]
@@ -220,6 +207,7 @@ fn create_segments(
     pixels_slic: &mut Vec2d<Point>,
     centroids: &mut Vec<Point>,
 ) -> Vec2d<i16> {
+    let max_size = 0;
     let (width, height) = (pixels_slic.width, pixels_slic.height);
     let mut segments: Vec2d<i16> = Vec2d::from_vec(
         vec![-1; width * height], width, height
@@ -272,9 +260,111 @@ fn create_segments(
     segments
 }
 
-fn enforce_connectivity(segments: Vec2d<i16>, centroids: &Vec2d<Point>) {
+fn enforce_connectivity(
+    segments: Vec2d<i16>, centroids: &Vec<Point>
+) -> Vec2d<i16> {
     let (width, height) = (segments.width, segments.height);
-    let connected_segments = Vec2d::from_vec(
-        vec![-1; width * height], width, height
+    let optimal_size = (width * height / centroids.len()) as f32;
+    let (min_size, max_size) = (
+        (optimal_size * 0.25) as usize,
+        (optimal_size * 5.0) as usize,
     );
+    let mut connected_segments = Vec2d::from_vec(
+        vec![-1 as i16; width * height], width, height
+    );
+    let mut bfs_visited = Vec::with_capacity(max_size);
+    let bfs_neighbors = vec![(0, 1), (0, -1), (1, 0), (-1, 0)];
+    let (mut adjacent_label, mut cur_label, mut new_label, mut cur_size) = (
+        0, 0, 0, 0
+    );
+    let (mut x_j, mut y_j, mut bfs_i) = (0, 0, 0);
+    for x_i in 0..width {
+        for y_i in 0..height {
+            if *connected_segments.i(x_i, y_i) >= 0 {
+                continue;
+            }
+            adjacent_label = 0;
+            cur_label = *segments.i(x_i, y_i);
+            connected_segments.i_assign(x_i, y_i, new_label);
+            cur_size = 1;
+            bfs_i = 0;
+            bfs_visited.clear();
+            bfs_visited.push((x_i, y_i));
+            while bfs_i < cur_size && bfs_i < max_size {
+                for (x_offset, y_offset) in bfs_neighbors.iter() {
+                    x_j = bfs_visited[bfs_i].0 as i16 + x_offset;
+                    y_j = bfs_visited[bfs_i].1 as i16 + y_offset;
+                    if (
+                        x_j >= 0
+                        && x_j < width as i16
+                        && y_j >= 0
+                        && y_j < height as i16
+                    ) {
+                        let (x_j, y_j) = (x_j as usize, y_j as usize);
+                        if (
+                            *segments.i(x_j, y_j) == cur_label
+                            && *connected_segments.i(x_j, y_j) == -1
+                        ) {
+                            connected_segments.i_assign(x_j, y_j, new_label);
+                            bfs_visited.push((x_j, y_j));
+                            cur_size += 1;
+                            if cur_size >= max_size {
+                                break;
+                            }
+                        } else if (
+                            *connected_segments.i(x_j, y_j) >= 0
+                            && *connected_segments.i(x_j, y_j) != new_label
+                        ) {
+                            adjacent_label = *connected_segments.i(x_j, y_j);
+                        }
+                    }
+                }
+                bfs_i += 1;
+            }
+            if cur_size < min_size {
+                for (x_k, y_k) in bfs_visited.iter() {
+                    connected_segments.i_assign(*x_k, *y_k, adjacent_label);
+                }
+            } else {
+                new_label += 1;
+            }
+        }
+    }
+    connected_segments
+}
+
+fn mark_boundaries(pixels_rgb: &mut Vec<u8>, segments: &Vec2d<i16>) {
+    let neighbors = vec![(0, 1), (0, -1), (1, 0), (-1, 0)];
+    let (mut x_j, mut y_j) = (0, 0);
+    let mut edge = false;
+    let mut label = 0;
+    for x_i in 0..segments.width {
+        for y_i in 0..segments.height {
+            label = *segments.i(x_i, y_i);
+            edge = false;
+            for (x_offset, y_offset) in neighbors.iter() {
+                x_j = x_i as i16 + *x_offset;
+                y_j = y_i as i16 + *y_offset;
+                if (
+                    x_j < 0
+                    || x_j >= segments.width as i16
+                    || y_j < 0
+                    || y_j >= segments.height as i16
+                    || *segments.i(x_j as usize, y_j as usize) != label
+                ) {
+                    edge = true;
+                    break;
+                }
+            }
+            let rgb_i = (y_i * segments.width + x_i) * 4;
+            if edge {
+                pixels_rgb[rgb_i] = 255;
+                pixels_rgb[rgb_i + 1] = 68;
+                pixels_rgb[rgb_i + 2] = 68;
+                pixels_rgb[rgb_i + 3] = 255;
+            } else {
+                pixels_rgb[rgb_i + 3] = 0;
+            }
+        }
+    }
 }
