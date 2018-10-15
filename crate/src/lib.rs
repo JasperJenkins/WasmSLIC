@@ -358,9 +358,9 @@ fn mark_boundaries(pixels_rgb: &mut Vec<u8>, segments: &Vec2d<i16>) {
             }
             let rgb_i = (y_i * segments.width + x_i) * 4;
             if edge {
-                pixels_rgb[rgb_i] = 255;
-                pixels_rgb[rgb_i + 1] = 68;
-                pixels_rgb[rgb_i + 2] = 68;
+                pixels_rgb[rgb_i] = 92;
+                pixels_rgb[rgb_i + 1] = 66;
+                pixels_rgb[rgb_i + 2] = 244;
                 pixels_rgb[rgb_i + 3] = 255;
             } else {
                 pixels_rgb[rgb_i + 3] = 0;
