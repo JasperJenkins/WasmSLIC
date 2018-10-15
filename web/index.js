@@ -19,10 +19,10 @@ function upadate_the_thing() {
     let image_data = context.getImageData(0, 0, image.width, image.height);
     context.putImageData(image_data, 0, 0);
     segments_label.innerText = "Segments (8-512): " + segments_input.value;
-    compactness_label.innerText = "Compactness (1-50): " + compactness_input.value;
+    compactness_label.innerText = "Compactness 10^(1-2.5): " + compactness_input.value;
     image_data = slic.segment_image(
         +segments_input.value,
-        +compactness_input.value,
+        Math.pow(10, +compactness_input.value),
         image_data
     );
     context.putImageData(image_data, 0, 0);
