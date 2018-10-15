@@ -214,17 +214,17 @@ fn create_segments(
         vec![-1; width * height], width, height
     );
     let xy_coeff = m_num / spacing;
-    let search_space = spacing * 2.0;
+    let search_space = spacing;
     let mut cluster_counts: Vec<u32> = vec![0; centroids.len()];
     for _ in 0..6 {
         for (k, centroid) in centroids.iter().enumerate() {
             let (x_min, x_max) = (
-                usize::max((centroid.x - search_space) as usize, 0),
-                usize::min((centroid.x + search_space) as usize, width),
+                usize::max((centroid.x - search_space * 1.33) as usize, 0),
+                usize::min((centroid.x + search_space * 1.33) as usize, width),
             );
             let (y_min, y_max) = (
-                usize::max((centroid.y - search_space) as usize, 0),
-                usize::min((centroid.y + search_space) as usize, height),
+                usize::max((centroid.y - search_space * 1.33) as usize, 0),
+                usize::min((centroid.y + search_space * 2.0) as usize, height),
             );
             for x_i in x_min..x_max {
                 for y_i in y_min..y_max {
