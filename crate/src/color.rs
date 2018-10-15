@@ -1,15 +1,19 @@
+extern crate packed_simd;
+use packed_simd::{f32x4};
+
 // https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/bsds/code/Util/RGB2Lab.m
 #[inline(always)]
 pub fn rgb2lab(r: u8, g: u8, b: u8, rgb2xyz_table: &[f32]) -> (f32, f32, f32) {
-    let (r, g, b) = (
+    let rgb = f32x4::new(
         rgb2xyz_table[r as usize],
         rgb2xyz_table[g as usize],
         rgb2xyz_table[b as usize],
+        0.0,
     );
     let (x, y, z) = (
-        r.mul_add(0.412453, g.mul_add(0.357580, b * 0.180423)) / 0.950456,
-        r.mul_add(0.212671, g.mul_add(0.715160, b * 0.072169)),
-        r.mul_add(0.019334, g.mul_add(0.119193, b * 0.950227)) / 1.088754,
+        (rgb * f32x4::new(0.412453, 0.357580, 0.180423, 0.0)).sum() / 0.950456,
+        (rgb * f32x4::new(0.212671, 0.715160, 0.072169, 0.0)).sum(),
+        (rgb * f32x4::new(0.019334, 0.119193, 0.950227, 0.0)).sum() / 1.088754,
     );
     let threshold = 0.008856;
     let f_x = if x > threshold {

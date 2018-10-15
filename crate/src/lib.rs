@@ -2,10 +2,12 @@
 extern crate cfg_if;
 extern crate wasm_bindgen;
 extern crate web_sys;
+extern crate packed_simd;
 use std::collections::{HashMap};
 use wasm_bindgen::prelude::{*};
 use web_sys::{ImageData};
 use std::{f32, i16};
+use packed_simd::{f32x4};
 mod color;
 
 cfg_if! {
@@ -53,11 +55,16 @@ pub fn segment_image(
 
 #[derive(Clone)]
 struct Point {
+    /*
     l: f32,
     a: f32,
     b: f32,
     x: f32,
     y: f32,
+    */
+    lab: f32x4,
+    x: f32,
+    y: f32
 }
 
 impl Point {
@@ -66,7 +73,11 @@ impl Point {
         r: u8, g: u8, b: u8, x: usize, y: usize, rgb2xyz_table: &[f32]
     ) -> Self {
         let (l, a, b) = color::rgb2lab(r, g, b, rgb2xyz_table);
-        Point { l, a, b, x: x as f32, y: y as f32 }
+        Point {
+            lab: f32x4::new(l, a, b, 0.0),
+            x: x as f32,
+            y: y as f32,
+        }
     }
 
     #[inline(always)]
@@ -81,6 +92,7 @@ impl Point {
             + (a.y - b.y).powi(2)
         ).sqrt()
         */
+        /*
         (
               (a.l - b.l).abs()
             + (a.a - b.a).abs()
@@ -89,31 +101,51 @@ impl Point {
               (a.x - b.x).abs()
             + (a.y - b.y).abs()
         )
+        */
+        (a.lab - b.lab).abs().sum() + xy_coeff * (
+              (a.x - b.x).abs()
+            + (a.y - b.y).abs()
+        )
     }
 
     #[inline(always)]
     pub fn zero(&mut self) {
+        /*
         self.l = 0.0;
         self.a = 0.0;
         self.b = 0.0;
+        self.x = 0.0;
+        self.y = 0.0;
+        */
+        self.lab = f32x4::new(0.0, 0.0, 0.0, 0.0);
         self.x = 0.0;
         self.y = 0.0;
     }
 
     #[inline(always)]
     fn add(&mut self, other: &Point) {
+        /*
         self.l += other.l;
         self.a += other.a;
         self.b += other.b;
+        self.x += other.x;
+        self.y += other.y;
+        */
+        self.lab += other.lab;
         self.x += other.x;
         self.y += other.y;
     }
 
     #[inline(always)]
     fn div(&mut self, other: f32) {
+        /*
         self.l /= other;
         self.a /= other;
         self.b /= other;
+        self.x /= other;
+        self.y /= other;
+        */
+        self.lab /= other;
         self.x /= other;
         self.y /= other;
     }
