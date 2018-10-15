@@ -2,6 +2,7 @@
 extern crate cfg_if;
 extern crate wasm_bindgen;
 extern crate web_sys;
+use std::collections::{HashMap};
 use wasm_bindgen::prelude::{*};
 use web_sys::{ImageData};
 use std::{f32, i16};
@@ -273,23 +274,22 @@ fn enforce_connectivity(
         vec![-1 as i16; width * height], width, height
     );
     let mut bfs_visited = Vec::with_capacity(max_size);
+    let mut adjacent_labels = HashMap::new();
     let bfs_neighbors = vec![(0, 1), (0, -1), (1, 0), (-1, 0)];
-    let (mut adjacent_label, mut cur_label, mut new_label, mut cur_size) = (
-        0, 0, 0, 0
-    );
+    let (mut cur_label, mut new_label, mut cur_size) = (0, 0, 0);
     let (mut x_j, mut y_j, mut bfs_i) = (0, 0, 0);
     for x_i in 0..width {
         for y_i in 0..height {
             if *connected_segments.i(x_i, y_i) >= 0 {
                 continue;
             }
-            adjacent_label = 0;
             cur_label = *segments.i(x_i, y_i);
             connected_segments.i_assign(x_i, y_i, new_label);
             cur_size = 1;
             bfs_i = 0;
             bfs_visited.clear();
             bfs_visited.push((x_i, y_i));
+            adjacent_labels.clear();
             while bfs_i < cur_size && bfs_i < max_size {
                 for (x_offset, y_offset) in bfs_neighbors.iter() {
                     x_j = bfs_visited[bfs_i].0 as i16 + x_offset;
@@ -315,15 +315,25 @@ fn enforce_connectivity(
                             *connected_segments.i(x_j, y_j) >= 0
                             && *connected_segments.i(x_j, y_j) != new_label
                         ) {
-                            adjacent_label = *connected_segments.i(x_j, y_j);
+                            *adjacent_labels.entry(
+                                *connected_segments.i(x_j, y_j)
+                            ).or_insert(0) += 1;
                         }
                     }
                 }
                 bfs_i += 1;
             }
             if cur_size < min_size {
+                let mut largest_adjacent = 0;
+                let mut largest_adjacent_size = 0;
+                for (adjacent, adjacent_size) in adjacent_labels.iter() {
+                    if *adjacent_size > largest_adjacent_size {
+                        largest_adjacent = *adjacent;
+                        largest_adjacent_size = *adjacent_size;
+                    }
+                }
                 for (x_k, y_k) in bfs_visited.iter() {
-                    connected_segments.i_assign(*x_k, *y_k, adjacent_label);
+                    connected_segments.i_assign(*x_k, *y_k, largest_adjacent);
                 }
             } else {
                 new_label += 1;
