@@ -5,7 +5,6 @@ extern crate wasm_bindgen;
 extern crate web_sys;
 use wasm_bindgen::prelude::{*};
 use web_sys::{ImageData};
-use std::ops::{AddAssign};
 use std::{f32, i16};
 mod color;
 
@@ -40,18 +39,10 @@ pub fn segment_image(
         &pixels_rgb, width as usize, height as usize
     );
     let (mut centroids, spacing) = init_centroids_and_get_spacing(
-        segment_num,
-        width as usize,
-        height as usize,
-        &pixels_slic,
+        segment_num, &pixels_slic,
     );
     let segments = create_segments(
-        spacing,
-        m_num,
-        width as usize,
-        height as usize,
-        &mut pixels_slic,
-        &mut centroids,
+        spacing, m_num, &mut pixels_slic, &mut centroids,
     );
     for i in (0..pixels_rgb.len()).step_by(4) {
         let segment = segments.vec[i / 4];
@@ -93,13 +84,23 @@ impl Point {
     #[inline(always)]
     pub fn distance(a: &Self, b: &Self, xy_coeff: f32) -> f32 {
         (
-              (a.l - b.l).abs()//.powi(2)
-            + (a.a - b.a).abs()//.powi(2)
-            + (a.b - b.b).abs()//.powi(2)
-        )/*.sqrt()*/ + xy_coeff * (
-              (a.x - b.x).abs()//.powi(2)
-            + (a.y - b.y).abs()//.powi(2)
-        )//.sqrt()
+              (a.l - b.l).powi(2)
+            + (a.a - b.a).powi(2)
+            + (a.b - b.b).powi(2)
+        ).sqrt() + xy_coeff * (
+              (a.x - b.x).powi(2)
+            + (a.y - b.y).powi(2)
+        ).sqrt()
+        /*
+        (
+              (a.l - b.l).abs()
+            + (a.a - b.a).abs()
+            + (a.b - b.b).abs()
+        ) + xy_coeff * (
+              (a.x - b.x).abs()
+            + (a.y - b.y).abs()
+        )
+        */
     }
 
     #[inline(always)]
@@ -179,15 +180,17 @@ fn init_pixels_slic(
 }
 
 fn init_centroids_and_get_spacing(
-    segment_num: usize, width: usize, height: usize, pixels_slic: &Vec2d<Point>
+    segment_num: usize, pixels_slic: &Vec2d<Point>
 ) -> (Vec<Point>, f32) {
-    let spacing = centroid_spacing(width, height, segment_num);
+    let spacing = centroid_spacing(
+        pixels_slic.width, pixels_slic.height, segment_num
+    );
     let mut centroids = Vec::with_capacity(segment_num);
     let mut i = 0;
     while i < segment_num {
         let px = i as f32 * spacing;
-        let x = px % width as f32;
-        let y = (px / width as f32).floor() * spacing;
+        let x = px % pixels_slic.width as f32 + (spacing / 2.0);
+        let y = (px / pixels_slic.width as f32).floor() * spacing;
         centroids.push(pixels_slic.i(x as usize, y as usize).clone());
         i += 1;
     }
@@ -214,11 +217,10 @@ fn centroid_spacing(w: usize, h: usize, n: usize) -> f32 {
 fn create_segments(
     spacing: f32,
     m_num: f32,
-    width: usize,
-    height: usize,
     pixels_slic: &mut Vec2d<Point>,
     centroids: &mut Vec<Point>,
 ) -> Vec2d<i16> {
+    let (width, height) = (pixels_slic.width, pixels_slic.height);
     let mut segments: Vec2d<i16> = Vec2d::from_vec(
         vec![-1; width * height], width, height
     );
@@ -268,4 +270,11 @@ fn create_segments(
         }
     }
     segments
+}
+
+fn enforce_connectivity(segments: Vec2d<i16>, centroids: &Vec2d<Point>) {
+    let (width, height) = (segments.width, segments.height);
+    let connected_segments = Vec2d::from_vec(
+        vec![-1; width * height], width, height
+    );
 }
