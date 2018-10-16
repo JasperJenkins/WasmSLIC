@@ -224,7 +224,7 @@ fn centroid_spacing(w: usize, h: usize, n: usize) -> f32 {
         let mid = (lower + upper) / 2.0;
         let n_estimate = (h / mid) * (w / mid);
         let diff = n - n_estimate;
-        if diff.abs() < 0.0001 {
+        if diff.abs() < 0.001 {
             return mid;
         } else if diff > 0.0 {
             upper = mid;
@@ -251,11 +251,11 @@ fn create_segments(
     for _ in 0..6 {
         for (k, centroid) in centroids.iter().enumerate() {
             let (x_min, x_max) = (
-                usize::max((centroid.x - search_space * 1.33) as usize, 0),
-                usize::min((centroid.x + search_space * 1.33) as usize, width),
+                usize::max((centroid.x - search_space * 1.2) as usize, 0),
+                usize::min((centroid.x + search_space * 1.25) as usize, width),
             );
             let (y_min, y_max) = (
-                usize::max((centroid.y - search_space * 1.33) as usize, 0),
+                usize::max((centroid.y - search_space * 1.2) as usize, 0),
                 usize::min((centroid.y + search_space * 2.0) as usize, height),
             );
             for x_i in x_min..x_max {

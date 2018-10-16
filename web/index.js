@@ -21,7 +21,7 @@ function upadate_the_thing() {
     context.drawImage(image, 0, 0, image.width, image.height);
     let image_data = context.getImageData(0, 0, image.width, image.height);
     context.putImageData(image_data, 0, 0);
-    segments_label.innerText = "Segments (8-512): " + segments_input.value;
+    segments_label.innerText = "Segments (8-2048): " + segments_input.value;
     compactness_label.innerText = "Compactness 10^(0.2-3.0): " + compactness_input.value;
     image_data = slic.segment_image(
         +segments_input.value,
