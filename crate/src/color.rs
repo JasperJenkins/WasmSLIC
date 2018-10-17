@@ -1,5 +1,5 @@
 extern crate packed_simd;
-use packed_simd::{f32x4};
+use packed_simd::f32x4;
 
 // https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/bsds/code/Util/RGB2Lab.m
 #[inline(always)]
@@ -40,7 +40,7 @@ pub fn rgb2xyz_coord(c: u8) -> f32 {
     let c = c as f32 / 255.0;
     if c > 0.04045 {
         ((c + 0.055) / 1.055).powf(2.4)
-        //powf_so_slow(((c + 0.055) / 1.055) as f64, 2.4) as f32
+    //powf_so_slow(((c + 0.055) / 1.055) as f64, 2.4) as f32
     } else {
         c / 12.92
     }
@@ -53,9 +53,14 @@ mod tests {
     // https://github.com/ashleygwilliams/assert_approx_eq/blob/master/src/lib.rs
     fn assert_almost_eq(a: f32, b: f32, eps: f32) {
         let diff = (a - b).abs();
-        assert!(diff < eps, "assertion failed: `(left != right)` \
-            (left: `{:?}`, right: `{:?}`, expect diff: `{:?}`, real diff: `{:?}`)",
-            a, b, eps, diff
+        assert!(
+            diff < eps,
+            "assertion failed: `(left != right)` \
+             (left: `{:?}`, right: `{:?}`, expect diff: `{:?}`, real diff: `{:?}`)",
+            a,
+            b,
+            eps,
+            diff
         );
     }
 

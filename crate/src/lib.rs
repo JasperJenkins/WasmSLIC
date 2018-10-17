@@ -1,13 +1,13 @@
 #[macro_use]
 extern crate cfg_if;
+extern crate packed_simd;
 extern crate wasm_bindgen;
 extern crate web_sys;
-extern crate packed_simd;
-use std::collections::{HashMap};
-use wasm_bindgen::prelude::{*};
-use web_sys::{ImageData};
+use packed_simd::f32x4;
+use std::collections::HashMap;
 use std::{f32, i16};
-use packed_simd::{f32x4};
+use wasm_bindgen::prelude::*;
+use web_sys::ImageData;
 mod color;
 
 cfg_if! {
@@ -30,27 +30,22 @@ cfg_if! {
 }
 
 #[wasm_bindgen]
-pub fn segment_image(
-    segment_num: JsValue, m_num: JsValue, image_data: ImageData
-) -> ImageData {
+pub fn segment_image(segment_num: JsValue, m_num: JsValue, image_data: ImageData) -> ImageData {
     let (width, height) = (image_data.width(), image_data.height());
     let segment_num = segment_num.as_f64().unwrap() as usize;
     let m_num = m_num.as_f64().unwrap() as f32;
     let mut pixels_rgb = image_data.data().clone();
-    let mut pixels_slic = init_pixels_slic(
-        &pixels_rgb, width as usize, height as usize
-    );
-    let (mut centroids, spacing) = init_centroids_and_get_spacing(
-        segment_num, &pixels_slic,
-    );
-    let mut segments = create_segments(
-        spacing, m_num, &mut pixels_slic, &mut centroids,
-    );
+    let mut pixels_slic = init_pixels_slic(&pixels_rgb, width as usize, height as usize);
+    let (mut centroids, spacing) = init_centroids_and_get_spacing(segment_num, &pixels_slic);
+    let mut segments = create_segments(spacing, m_num, &mut pixels_slic, &mut centroids);
     segments = enforce_connectivity(segments, &centroids);
     mark_boundaries(&mut pixels_rgb, &segments);
     ImageData::new_with_u8_clamped_array_and_sh(
-        wasm_bindgen::Clamped(&mut pixels_rgb), width, height
-    ).unwrap()
+        wasm_bindgen::Clamped(&mut pixels_rgb),
+        width,
+        height,
+    )
+    .unwrap()
 }
 
 #[derive(Clone)]
@@ -64,14 +59,12 @@ struct Point {
     */
     lab: f32x4,
     x: f32,
-    y: f32
+    y: f32,
 }
 
 impl Point {
     #[inline(always)]
-    pub fn from_rgb(
-        r: u8, g: u8, b: u8, x: usize, y: usize, rgb2xyz_table: &[f32]
-    ) -> Self {
+    pub fn from_rgb(r: u8, g: u8, b: u8, x: usize, y: usize, rgb2xyz_table: &[f32]) -> Self {
         let (l, a, b) = color::rgb2lab(r, g, b, rgb2xyz_table);
         Point {
             lab: f32x4::new(l, a, b, 0.0),
@@ -102,10 +95,7 @@ impl Point {
             + (a.y - b.y).abs()
         )
         */
-        (a.lab - b.lab).abs().sum() + xy_coeff * (
-              (a.x - b.x).abs()
-            + (a.y - b.y).abs()
-        )
+        (a.lab - b.lab).abs().sum() + xy_coeff * ((a.x - b.x).abs() + (a.y - b.y).abs())
     }
 
     #[inline(always)]
@@ -178,9 +168,7 @@ impl<T> Vec2d<T> {
     }
 }
 
-fn init_pixels_slic(
-    pixels: &Vec<u8>, width: usize, height: usize
-) -> Vec2d<Point> {
+fn init_pixels_slic(pixels: &Vec<u8>, width: usize, height: usize) -> Vec2d<Point> {
     let mut table: [f32; 256] = [0.0; 256];
     for i in 0..table.len() {
         table[i] = color::rgb2xyz_coord(i as u8);
@@ -200,11 +188,10 @@ fn init_pixels_slic(
 }
 
 fn init_centroids_and_get_spacing(
-    segment_num: usize, pixels_slic: &Vec2d<Point>
+    segment_num: usize,
+    pixels_slic: &Vec2d<Point>,
 ) -> (Vec<Point>, f32) {
-    let spacing = centroid_spacing(
-        pixels_slic.width, pixels_slic.height, segment_num
-    );
+    let spacing = centroid_spacing(pixels_slic.width, pixels_slic.height, segment_num);
     let mut centroids = Vec::with_capacity(segment_num);
     let mut i = 0;
     while i < segment_num {
@@ -242,9 +229,7 @@ fn create_segments(
 ) -> Vec2d<i16> {
     let max_size = 0;
     let (width, height) = (pixels_slic.width, pixels_slic.height);
-    let mut segments: Vec2d<i16> = Vec2d::from_vec(
-        vec![-1; width * height], width, height
-    );
+    let mut segments: Vec2d<i16> = Vec2d::from_vec(vec![-1; width * height], width, height);
     let xy_coeff = m_num / spacing;
     let search_space = spacing;
     let mut cluster_counts: Vec<u32> = vec![0; centroids.len()];
@@ -261,15 +246,12 @@ fn create_segments(
             for x_i in x_min..x_max {
                 for y_i in y_min..y_max {
                     if *segments.i(x_i, y_i) != -1 {
-                        if Point::distance(
-                            pixels_slic.i(x_i, y_i),
-                            centroid,
-                            xy_coeff,
-                        ) < Point::distance(
-                            pixels_slic.i(x_i, y_i),
-                            &centroids[*segments.i(x_i, y_i) as usize],
-                            xy_coeff,
-                        ) {
+                        if Point::distance(pixels_slic.i(x_i, y_i), centroid, xy_coeff)
+                            < Point::distance(
+                                pixels_slic.i(x_i, y_i),
+                                &centroids[*segments.i(x_i, y_i) as usize],
+                                xy_coeff,
+                            ) {
                             segments.i_assign(x_i, y_i, k as i16);
                         }
                     } else {
@@ -293,18 +275,14 @@ fn create_segments(
     segments
 }
 
-fn enforce_connectivity(
-    segments: Vec2d<i16>, centroids: &Vec<Point>
-) -> Vec2d<i16> {
+fn enforce_connectivity(segments: Vec2d<i16>, centroids: &Vec<Point>) -> Vec2d<i16> {
     let (width, height) = (segments.width, segments.height);
     let optimal_size = (width * height / centroids.len()) as f32;
     let (min_size, max_size) = (
         (optimal_size * 0.25) as usize,
         (optimal_size * 5.0) as usize,
     );
-    let mut connected_segments = Vec2d::from_vec(
-        vec![-1 as i16; width * height], width, height
-    );
+    let mut connected_segments = Vec2d::from_vec(vec![-1 as i16; width * height], width, height);
     let mut bfs_visited = Vec::with_capacity(max_size);
     let mut adjacent_labels = HashMap::new();
     let bfs_neighbors = vec![(0, 1), (0, -1), (1, 0), (-1, 0)];
@@ -326,30 +304,23 @@ fn enforce_connectivity(
                 for (x_offset, y_offset) in bfs_neighbors.iter() {
                     x_j = bfs_visited[bfs_i].0 as i16 + x_offset;
                     y_j = bfs_visited[bfs_i].1 as i16 + y_offset;
-                    if (
-                        x_j >= 0
-                        && x_j < width as i16
-                        && y_j >= 0
-                        && y_j < height as i16
-                    ) {
+                    if (x_j >= 0 && x_j < width as i16 && y_j >= 0 && y_j < height as i16) {
                         let (x_j, y_j) = (x_j as usize, y_j as usize);
-                        if (
-                            *segments.i(x_j, y_j) == cur_label
-                            && *connected_segments.i(x_j, y_j) == -1
-                        ) {
+                        if (*segments.i(x_j, y_j) == cur_label
+                            && *connected_segments.i(x_j, y_j) == -1)
+                        {
                             connected_segments.i_assign(x_j, y_j, new_label);
                             bfs_visited.push((x_j, y_j));
                             cur_size += 1;
                             if cur_size >= max_size {
                                 break;
                             }
-                        } else if (
-                            *connected_segments.i(x_j, y_j) >= 0
-                            && *connected_segments.i(x_j, y_j) != new_label
-                        ) {
-                            *adjacent_labels.entry(
-                                *connected_segments.i(x_j, y_j)
-                            ).or_insert(0) += 1;
+                        } else if (*connected_segments.i(x_j, y_j) >= 0
+                            && *connected_segments.i(x_j, y_j) != new_label)
+                        {
+                            *adjacent_labels
+                                .entry(*connected_segments.i(x_j, y_j))
+                                .or_insert(0) += 1;
                         }
                     }
                 }
@@ -387,13 +358,12 @@ fn mark_boundaries(pixels_rgb: &mut Vec<u8>, segments: &Vec2d<i16>) {
             for (x_offset, y_offset) in neighbors.iter() {
                 x_j = x_i as i16 + *x_offset;
                 y_j = y_i as i16 + *y_offset;
-                if (
-                    x_j < 0
+                if (x_j < 0
                     || x_j >= segments.width as i16
                     || y_j < 0
                     || y_j >= segments.height as i16
-                    || *segments.i(x_j as usize, y_j as usize) != label
-                ) {
+                    || *segments.i(x_j as usize, y_j as usize) != label)
+                {
                     edge = true;
                     break;
                 }
