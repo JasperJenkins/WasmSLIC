@@ -243,8 +243,8 @@ fn create_segments(
                 usize::max((centroid.y - search_space * 1.2) as usize, 0),
                 usize::min((centroid.y + search_space * 2.0) as usize, height),
             );
-            for x_i in x_min..x_max {
-                for y_i in y_min..y_max {
+            for y_i in y_min..y_max {
+                for x_i in x_min..x_max {
                     if *segments.i(x_i, y_i) != -1 {
                         if Point::distance(pixels_slic.i(x_i, y_i), centroid, xy_coeff)
                             < Point::distance(
@@ -288,8 +288,8 @@ fn enforce_connectivity(segments: Vec2d<i16>, centroids: &Vec<Point>) -> Vec2d<i
     let bfs_neighbors = vec![(0, 1), (0, -1), (1, 0), (-1, 0)];
     let (mut cur_label, mut new_label, mut cur_size) = (0, 0, 0);
     let (mut x_j, mut y_j, mut bfs_i) = (0, 0, 0);
-    for x_i in 0..width {
-        for y_i in 0..height {
+    for y_i in 0..height {
+        for x_i in 0..width {
             if *connected_segments.i(x_i, y_i) >= 0 {
                 continue;
             }
@@ -351,8 +351,8 @@ fn mark_boundaries(pixels_rgb: &mut Vec<u8>, segments: &Vec2d<i16>) {
     let (mut x_j, mut y_j) = (0, 0);
     let mut edge = false;
     let mut label = 0;
-    for x_i in 0..segments.width {
-        for y_i in 0..segments.height {
+    for y_i in 0..segments.height {
+        for x_i in 0..segments.width {
             label = *segments.i(x_i, y_i);
             edge = false;
             for (x_offset, y_offset) in neighbors.iter() {
